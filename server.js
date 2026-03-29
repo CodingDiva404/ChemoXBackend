@@ -104,6 +104,12 @@ app.get("/", (req, res) => {
     res.send("API is running 🚀");
 });
 
+
+app.post("/clear-cache", (req, res) => {
+    Object.keys(theoryCache).forEach(key => delete theoryCache[key]);
+    res.json({ message: "Cache cleared ✅" });
+});
+
 /* =========================
    SERVER
 ========================= */
