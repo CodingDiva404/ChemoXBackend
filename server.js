@@ -1,35 +1,16 @@
-import express from "express";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
-import cors from "cors";
-
-dotenv.config();
-
-const app = express();
-
-app.use(cors());
-app.use(express.json());
-
-/* =========================
-   🧠 SIMPLE CACHE (IN-MEMORY)
-========================= */
-const theoryCache = {};
-
-/* =========================
-   API
-========================= */
 app.post("/generate-theory", async (req, res) => {
     try {
+        const { title, aim } = req.body || {};
+
+        // ✅ validation
         if (!title || !aim) {
-            return res.status(400).json({ error: "Title and Aim are required" });
+            return res.status(400).json({
+                error: "Title and Aim are required"
+            });
         }
 
-        // 🔑 Unique cache key
         const cacheKey = `${title}-${aim}`;
 
-        /* =========================
-           ✅ RETURN FROM CACHE
-        ========================= */
         if (theoryCache[cacheKey]) {
             console.log("⚡ Serving from cache");
             return res.json({
@@ -71,20 +52,20 @@ No paragraphs, no extra text.
             }
         );
 
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error("Gemini API Error:", errText);
+            return res.status(500).json({ error: "Gemini API failed" });
+        }
+
         const data = await response.json();
 
         let text = "No response from AI";
 
         if (data.candidates && data.candidates.length > 0) {
             text = data.candidates[0]?.content?.parts?.[0]?.text || text;
-        } else if (data.error) {
-            console.error("Gemini Error:", data.error);
-            return res.status(500).json({ error: data.error.message });
         }
 
-        /* =========================
-           💾 SAVE TO CACHE
-        ========================= */
         theoryCache[cacheKey] = text;
 
         console.log("💾 Saved to cache");
@@ -96,20 +77,3 @@ No paragraphs, no extra text.
         res.status(500).json({ error: "AI failed" });
     }
 });
-
-/* =========================
-   Health Checkup
-========================= */
-app.get("/health", (req, res) => {
-    res.send("OK");
-});
-
-/* =========================
-   SERVER
-========================= */
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
-
