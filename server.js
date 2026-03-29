@@ -1,8 +1,27 @@
+import express from "express";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
+import cors from "cors";
+
+dotenv.config();
+
+const app = express(); // ✅ REQUIRED
+
+app.use(cors());
+app.use(express.json());
+
+/* =========================
+   🧠 CACHE
+========================= */
+const theoryCache = {};
+
+/* =========================
+   API
+========================= */
 app.post("/generate-theory", async (req, res) => {
     try {
         const { title, aim } = req.body || {};
 
-        // ✅ validation
         if (!title || !aim) {
             return res.status(400).json({
                 error: "Title and Aim are required"
@@ -76,4 +95,20 @@ No paragraphs, no extra text.
         console.error("Server Error:", error);
         res.status(500).json({ error: "AI failed" });
     }
+});
+
+/* =========================
+   HEALTH CHECK
+========================= */
+app.get("/", (req, res) => {
+    res.send("API is running 🚀");
+});
+
+/* =========================
+   SERVER
+========================= */
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
 });
